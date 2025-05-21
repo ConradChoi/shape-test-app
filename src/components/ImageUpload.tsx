@@ -27,23 +27,36 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
       onImageUpload(file);
-      
       try {
         setIsAnalyzing(true);
         setError(null);
-        
-        // Convert image to base64
         const reader = new FileReader();
         reader.onloadend = async () => {
           const base64String = reader.result as string;
-          const analysis = await analyzeShapeImage(base64String);
-          onShapeAnalysisChange(analysis);
+          try {
+            const analysis = await analyzeShapeImage(base64String);
+            onShapeAnalysisChange(analysis);
+          } catch (err) {
+            setError('이미지 분석 중 오류가 발생했습니다. 결과화면으로 바로 이동합니다.');
+            onShapeAnalysisChange({
+              firstShape: '',
+              secondShape: '',
+              thirdShape: '',
+              fourthShape: ''
+            });
+          } finally {
+            setIsAnalyzing(false);
+          }
         };
         reader.readAsDataURL(file);
       } catch (err) {
-        setError('이미지 분석 중 오류가 발생했습니다. 다시 시도해주세요.');
-        console.error('Error analyzing image:', err);
-      } finally {
+        setError('이미지 분석 중 오류가 발생했습니다. 결과화면으로 바로 이동합니다.');
+        onShapeAnalysisChange({
+          firstShape: '',
+          secondShape: '',
+          thirdShape: '',
+          fourthShape: ''
+        });
         setIsAnalyzing(false);
       }
     }

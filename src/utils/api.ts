@@ -6,36 +6,42 @@ const API_URL = 'https://api.openai.com/v1/chat/completions';
 
 export const analyzeShapeImage = async (imageBase64: string): Promise<ShapeAnalysis> => {
   try {
-    const response = await axios.post(
-      API_URL,
-      {
-        model: "gpt-4-vision-preview",
+    console.log('API Key:', API_KEY); // API 키 확인용 로그
+    console.log('Image Base64:', imageBase64.substring(0, 100) + '...'); // 이미지 데이터 확인용 로그
+
+    const response = await axios({
+      method: 'post',
+      url: API_URL,
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        model: "gpt-4",
         messages: [
           {
+            role: "system",
+            content: "You are a helpful assistant that analyzes shape psychology test images."
+          },
+          {
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: "이 도형심리 검사지에서 1차, 2차, 3차, 4차 도형을 순서대로 찾아서 알려줘. 각 도형의 특징을 간단히 설명하고, JSON 형식으로 응답해줘. 형식: { firstShape: '도형 설명', secondShape: '도형 설명', thirdShape: '도형 설명', fourthShape: '도형 설명' }"
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageBase64
-                }
-              }
-            ]
+            content: `Please analyze this shape psychology test image and provide the analysis in the following JSON format:
+            {
+              "firstShape": "description of first shape",
+              "secondShape": "description of second shape",
+              "thirdShape": "description of third shape",
+              "fourthShape": "description of fourth shape"
+            }
+            
+            Image URL: ${imageBase64}`
           }
         ],
+        temperature: 0.7,
         max_tokens: 500
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json'
-        }
       }
-    );
+    });
+
+    console.log('API Response:', response.data); // API 응답 확인용 로그
 
     const content = response.data.choices[0].message.content;
     const analysis = JSON.parse(content);
@@ -48,6 +54,13 @@ export const analyzeShapeImage = async (imageBase64: string): Promise<ShapeAnaly
     };
   } catch (error) {
     console.error('Error analyzing shape image:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('API Error Details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+    }
     throw error;
   }
 }; 
